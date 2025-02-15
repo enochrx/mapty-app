@@ -24,18 +24,33 @@ navigator.geolocation?.getCurrentPosition(
 
     const map = L.map("map").setView(coords, 13);
 
+    // var Stadia_AlidadeSatellite =
+
     L.tileLayer(
-      "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png",
+      "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}",
       {
+        minZoom: 0,
+        maxZoom: 20,
         attribution:
-          '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+          '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        ext: "jpg",
       }
     ).addTo(map);
 
-    L.marker([51.5, -0.09])
+    // L.tileLayer(
+    //   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png",
+    //   {
+    //     attribution:
+    //       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    //   }
+    // ).addTo(map);
+
+    L.marker(coords)
       .addTo(map)
       .bindPopup("A pretty CSS popup.<br> Easily customizable.")
       .openPopup();
+
+    map.on("click", mapEvent => console.log(mapEvent));
   },
   function () {
     //err cb
