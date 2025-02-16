@@ -21,7 +21,7 @@ html {
 }
 
 body {
-  font-family: 'Manrope', sans-serif;
+  font-family: "Manrope", sans-serif;
   color: var(--color-light--2);
   font-weight: 400;
   line-height: 1.6;
@@ -169,7 +169,7 @@ a:visited {
 }
 
 .form__btn {
-  display: none;
+  visibility: hidden;
 }
 
 .copyright {
