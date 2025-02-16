@@ -127,15 +127,39 @@ class App {
 
   _newWorkOut(e) {
     e.preventDefault();
-    //clearing value
-    inputCadence.value =
-      inputDuration.value =
-      inputDistance.value =
-      inputElevation.value =
-        "";
 
-    //Display marker
-    // console.log(mapEvent);
+    //Helper fxn to check for positive inputs
+    const validInputs = (...inputs) =>
+      inputs.every(inp => Number.isFinite(inp));
+
+    //Get data from form
+    const type = inputType.value;
+    const distance = +inputDistance.value;
+    const duration = +inputDuration.value;
+
+    //If workout running, crreate running object
+    if (type === "running") {
+      const cadence = +inputCadence.value;
+      //Check if data is valid --  Using Guard clause
+      if (
+        !validInputs(distance, cadence, duration)
+        // !Number.isFinite(distance)
+        // !Number.isFinite(duration)
+        // !Number.isFinite(cadence)
+      )
+        return alert("Inputs have to be positive numbers");
+    }
+
+    //If workout cycling, create cycling object
+    if (type === "cycling") {
+      const elevation = +inputElevation.value;
+      if (!validInputs(distance, cadence, duration))
+        return alert("Inputs have to be positive numbers");
+    }
+
+    //Add new object to workout array
+
+    //Render workout on map as marker
     const { lat, lng } = this.#mapEvent.latlng;
     L.marker([lat, lng])
       .addTo(this.#map)
@@ -151,6 +175,13 @@ class App {
       )
       .setPopupContent("Workout")
       .openPopup();
+
+    //clearing value
+    inputCadence.value =
+      inputDuration.value =
+      inputDistance.value =
+      inputElevation.value =
+        "";
   }
 }
 
