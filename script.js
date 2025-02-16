@@ -11,78 +11,147 @@ const inputDuration = document.querySelector(".form__input--duration");
 const inputCadence = document.querySelector(".form__input--cadence");
 const inputElevation = document.querySelector(".form__input--elevation");
 
-let map, mapEvent;
+class Workout {
+  //public fields
+  date = new Date();
+  id = (Date.now() + "").slice(-10);
+  constructor(coords, distance, duration) {
+    this.coords = coords; //[lat, lng]
+    this.distance = distance; //km
+    this.duration = duration; //min
+  }
+}
 
-if (navigator.geolocation)
-  navigator.geolocation.getCurrentPosition(
-    function (position) {
-      //success cb
-      // console.log(position);
-      const { latitude } = position.coords;
-      const { longitude } = position.coords;
-      console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
+class Running extends Workout {
+  constructor(coords, distance, duration, cadence) {
+    super(coords, distance, duration);
+    this.cadence = cadence;
+    this.calcPace();
+  }
 
-      const coords = [latitude, longitude];
+  calcPace() {
+    //min/km
+    this.pace = this.duration / this.distance;
+    return this.pace;
+  }
+}
 
-      map = L.map("map").setView(coords, 13);
+class Cycling extends Workout {
+  constructor(coords, distance, duration, elevationGain) {
+    super(coords, distance, duration);
+    this.elevationGain = elevationGain;
+    this.calcSpeed();
+  }
 
-      // var Stadia_AlidadeSatellite =
+  calcSpeed() {
+    //km/hr
+    this.speed = this.distance / (this.duration / 60);
+    return this.speed;
+  }
+}
 
-      L.tileLayer(
-        "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}",
-        {
-          minZoom: 0,
-          maxZoom: 20,
-          attribution:
-            '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-          ext: "jpg",
-        }
-      ).addTo(map);
+// const run1 = new Running([32, -14], 5.6, 56, 234);
+// const cycling1 = new Cycling([32, -14], 8.6, 96, 289);
 
-      // L.tileLayer(
-      //   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png",
-      //   {
-      //     attribution:
-      //       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      //   }
-      // ).addTo(map);
+// console.log(run1, cycling1);
 
-      // L.marker(coords)
-      //   .addTo(map)
-      //   .bindPopup("A pretty CSS popup.<br> Easily customizable.")
-      //   .openPopup();
+/////////////////////////////////////////////
+//APP ARCHITECTURE
+class App {
+  #map;
+  #mapEvent;
+  constructor() {
+    this._getPosition();
+    form.addEventListener("submit", this._newWorkOut.bind(this));
+    inputType.addEventListener("change", this._toggleElevationField);
+  }
 
-      //handling click on map
-      map.on("click", mapE => {
-        mapEvent = mapE;
-        form.classList.remove("hidden");
-        inputDistance.focus();
-      });
-    },
-    function () {
-      //err cb
-      alert("Can not get your location");
-    }
-  );
+  _getPosition() {
+    navigator.geolocation?.getCurrentPosition(
+      this._loadMap.bind(this),
+      function () {
+        //err cb
+        alert("Can not get your location");
+      }
+    );
+  }
 
-form.addEventListener("submit", function (e) {
-  e.preventDefault();
+  _loadMap(position) {
+    //success cb
+    const { latitude } = position.coords;
+    const { longitude } = position.coords;
+    console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
 
-  //Display marker
-  console.log(mapEvent);
-  const { lat, lng } = mapEvent.latlng;
-  L.marker([lat, lng])
-    .addTo(map)
-    .bindPopup(
-      L.popup({
-        maxWidth: 250,
-        minWidth: 100,
-        // content: "Workout",
-        autoClose: false,
-        closeOnClick: false,
-        className: "running-popup",
-      })
-    )
-    .setPopupContent("Workout")
-    .openPopup();
-});
+    const coords = [latitude, longitude];
+
+    this.#map = L.map("map").setView(coords, 13);
+
+    L.tileLayer(
+      "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}",
+      {
+        minZoom: 0,
+        maxZoom: 20,
+        attribution:
+          '&copy; CNES, Distribution Airbus DS, © Airbus DS, © PlanetObserver (Contains Copernicus Data) | &copy; <a href="https://www.stadiamaps.com/" target="_blank">Stadia Maps</a> &copy; <a href="https://openmaptiles.org/" target="_blank">OpenMapTiles</a> &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        ext: "jpg",
+      }
+    ).addTo(this.#map);
+
+    // L.tileLayer(
+    //   "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}.png",
+    //   {
+    //     attribution:
+    //       '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    //   }
+    // ).addTo(map);
+
+    // L.marker(coords)
+    //   .addTo(map)
+    //   .bindPopup("A pretty CSS popup.<br> Easily customizable.")
+    //   .openPopup();
+
+    //handling click on map
+    this.#map.on("click", this._showForm.bind(this));
+  }
+
+  _showForm(mapE) {
+    this.#mapEvent = mapE;
+    form.classList.remove("hidden");
+    inputDistance.focus();
+  }
+
+  _toggleElevationField() {
+    inputElevation.closest(".form__row").classList.toggle("form__row--hidden");
+    inputCadence.closest(".form__row").classList.toggle("form__row--hidden");
+  }
+
+  _newWorkOut(e) {
+    e.preventDefault();
+    //clearing value
+    inputCadence.value =
+      inputDuration.value =
+      inputDistance.value =
+      inputElevation.value =
+        "";
+
+    //Display marker
+    // console.log(mapEvent);
+    const { lat, lng } = this.#mapEvent.latlng;
+    L.marker([lat, lng])
+      .addTo(this.#map)
+      .bindPopup(
+        L.popup({
+          maxWidth: 250,
+          minWidth: 100,
+          // content: "Workout",
+          autoClose: false,
+          closeOnClick: false,
+          className: "running-popup",
+        })
+      )
+      .setPopupContent("Workout")
+      .openPopup();
+  }
+}
+
+const app = new App();
