@@ -13,6 +13,7 @@ class Workout {
   //public fields
   date = new Date();
   id = (Date.now() + "").slice(-10);
+  clicks = 0;
   constructor(coords, distance, duration) {
     this.coords = coords; //[lat, lng]
     this.distance = distance; //km
@@ -30,6 +31,10 @@ class Workout {
     this.description = `${this.constructor.name} on ${
       months[this.date.getMonth()]
     } ${this.date.getDate()}`;
+  }
+
+  click() {
+    this.clicks++;
   }
 }
 
@@ -68,18 +73,25 @@ class Cycling extends Workout {
 // const run1 = new Running([32, -14], 5.6, 56, 234);
 // const cycling1 = new Cycling([32, -14], 8.6, 96, 289);
 
-// console.log(run1, cycling1);
-
 /////////////////////////////////////////////
 //APP ARCHITECTURE
 class App {
   #map;
   #mapEvent;
+  #mapZoomLevel = 14;
   #workouts = [];
+
   constructor() {
+    //Get user's current location
     this._getPosition();
+
+    //Get data from local storage
+    this._getLocalStorage();
+
+    //Attach event handlers
     form.addEventListener("submit", this._newWorkOut.bind(this));
     inputType.addEventListener("change", this._toggleElevationField);
+    containerWorkouts.addEventListener("click", this._moveToPopup.bind(this));
   }
 
   _getPosition() {
@@ -96,11 +108,10 @@ class App {
     //success cb
     const { latitude } = position.coords;
     const { longitude } = position.coords;
-    console.log(`https://www.google.com/maps/@${latitude},${longitude}`);
 
     const coords = [latitude, longitude];
 
-    this.#map = L.map("map").setView(coords, 13);
+    this.#map = L.map("map").setView(coords, this.#mapZoomLevel);
 
     L.tileLayer(
       "https://tiles.stadiamaps.com/tiles/alidade_satellite/{z}/{x}/{y}{r}.{ext}",
@@ -128,6 +139,9 @@ class App {
 
     //handling click on map
     this.#map.on("click", this._showForm.bind(this));
+
+    // For the data in local storage, this is where we will then render the markers,because at this point, the map is, of course, already available. -- ASYNCHRONOUS JS
+    this.#workouts.forEach(work => this._renderWorkoutMarker(work));
   }
 
   _showForm(mapE) {
@@ -204,7 +218,6 @@ class App {
 
     //Add new object to workout array
     this.#workouts.push(workout);
-    console.log(workout);
 
     //Render workout on map as marker
 
@@ -215,6 +228,9 @@ class App {
 
     //Hide form + clear input fields
     this._hideForm();
+
+    //set local storage to all workouts
+    this._setLocalStorage();
   }
 
   _renderWorkoutMarker(workout) {
@@ -285,6 +301,43 @@ class App {
         `;
 
     form.insertAdjacentHTML("afterend", html);
+  }
+  _moveToPopup(e) {
+    const workoutEl = e.target.closest(".workout");
+
+    if (!workoutEl) return;
+
+    const workout = this.#workouts.find(
+      work => work.id === workoutEl.dataset.id
+    );
+
+    this.#map.setView(workout.coords, this.#mapZoomLevel, {
+      animate: true,
+      pan: {
+        duration: 1,
+      },
+    });
+
+    //using the public interface
+    // workout.click();
+  }
+
+  _setLocalStorage() {
+    localStorage.setItem("workouts", JSON.stringify(this.#workouts));
+  }
+
+  _getLocalStorage() {
+    const data = JSON.parse(localStorage.getItem("workouts"));
+
+    if (!data) return; //Guard clause
+    this.#workouts = data;
+
+    this.#workouts.forEach(work => this._renderWorkout(work));
+  }
+
+  reset() {
+    localStorage.removeItem("workouts");
+    location.reload();
   }
 }
 
