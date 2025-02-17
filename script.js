@@ -170,6 +170,7 @@ class App {
   _toggleElevationField() {
     inputElevation.closest(".form__row").classList.toggle("form__row--hidden");
     inputCadence.closest(".form__row").classList.toggle("form__row--hidden");
+    inputDistance.focus();
   }
 
   _newWorkOut(e) {
